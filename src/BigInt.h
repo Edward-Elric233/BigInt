@@ -13,16 +13,17 @@ class BigInt {
     using ll = long long;
     static constexpr int BASE = 1e8;    //基数是1e8，即满1e8才进一位
     static constexpr int WIDTH = 8;     //每一位的十进制长度是8位，主要用于字符串和转换
-    std::vector<int> bit;               //保存BigInt的每一位，小端模式：低位低字节，高位高字节
-    bool negative;                      //记录数字是否是负数
+    std::vector<int> bit_;               //保存BigInt的每一位，小端模式：低位低字节，高位高字节
+    bool negative_;                      //记录数字是否是负数
 public:
-    static void trim(std::string &s);                           //trim函数：删除头部和尾部的空格
+    static std::pair<int, int> trim(const std::string &s);                           //trim函数：删除头部和尾部的空格
     static void num2big(std::vector<int> &bit, ll num);         //实际处理函数：将正数num放入bit数组中
-    static void str2big(std::vector<int> &bit, std::string &s); //实际处理函数：将正数字符串放入bit数组中
+    static void str2big(std::vector<int> &bit,const std::string &s, std::pair<int, int> pr); //实际处理函数：将正数字符串放入bit数组中
     static bool less(const BigInt &lhs, const BigInt &rhs);     //比较两个数字的绝对值的大小
     BigInt(ll num = 0);
-    BigInt(std::string s); BigInt & operator =(ll num);         //必须返回BigInt&，与内置类型一致
-    BigInt & operator =(std::string s);
+    BigInt(const std::string &s);
+    BigInt & operator =(ll num);         //必须返回BigInt&，与内置类型一致
+    BigInt & operator =(const std::string &s);
     BigInt operator -() const;
     friend std::ostream &operator << (std::ostream &os, const BigInt &bigInt);
     friend std::istream &operator >> (std::istream &is, BigInt &bigInt);

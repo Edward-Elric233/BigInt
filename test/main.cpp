@@ -4,19 +4,27 @@
 #include <ctime>
 #include <string>
 #include <sstream>
+#include <random>
 #include <chrono>
 
 using namespace std;
 
+int getRandom(int max_ = INT_MAX, int min_ = 0) {
+    static default_random_engine e(std::chrono::system_clock::now().time_since_epoch().count());
+    static uniform_int_distribution<> u;
+    u.param(decltype(u)::param_type(min_, max_ - 1));
+    return u(e);
+}
+
 void init(string &s) {
     constexpr int MAX_LEN = 1e5;
-    bool negative = rand() % 2;
+    bool negative = getRandom(2);
     if (negative) s.push_back('-');
 
-    int len = rand() % MAX_LEN;
-    s.push_back(rand() % 9 + '1');  //第一位不能为0
+    int len = getRandom() % MAX_LEN;
+    s.push_back(getRandom(9) + '1');  //第一位不能为0
     for (int i = 0; i < len; ++i) {
-        s.push_back(rand() % 10 + '0');
+        s.push_back(getRandom(10) + '0');
     }
 }
 
@@ -116,6 +124,7 @@ int main() {
         cout << "a - b = " << a - b << endl;
         cout << "a * b = " << a * b << endl;
     }
+    //work();
 
     return 0;
 }

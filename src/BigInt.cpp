@@ -10,17 +10,17 @@
 
 BigInt BigInt::operator-() const {
     BigInt ret = *this;
-    ret.negative = !ret.negative;
+    ret.negative_ = !ret.negative_;
     return ret;
 }
 
 BigInt & BigInt::setOppo() {
-    negative = !negative;
+    negative_ = !negative_;
     return *this;
 }
 
 bool BigInt::isNegative() const {
-    return negative;
+    return negative_;
 }
 
 void BigInt::num2big(std::vector<int> &bit, ll num) {
@@ -33,80 +33,81 @@ void BigInt::num2big(std::vector<int> &bit, ll num) {
     } while (num);
 }
 
-BigInt::BigInt(ll num):negative(false) {
+BigInt::BigInt(ll num):negative_(false) {
     if (num < 0) {
         num = -num;
-        negative = true;
+        negative_ = true;
     }
-    num2big(this->bit, num);
+    num2big(bit_, num);
 }
 
-void BigInt::str2big(std::vector<int> &bit, std::string &s) {
-    int len = (s.size() - 1) / WIDTH + 1;       //ceil得到len
-    int start, end;
-    for (int i = 0; i < len; ++i) {
-        end = s.size() - i * WIDTH;
-        start = std::max(0, end - WIDTH);
+void BigInt::str2big(std::vector<int> &bit, const std::string &s, std::pair<int, int> pr) {
+    int len = (pr.second - pr.first - 1) / WIDTH + 1;       //ceil得到len
+    int start, end = pr.second;
+    for (int i = 1; i < len; ++i) {
+        start = end - WIDTH;
         bit.push_back(std::stoi(s.substr(start, end - start)));
+        end -= WIDTH;
     }
+    start = pr.first;
+    bit.push_back(std::stoi(s.substr(start, end - start)));
 }
 
-BigInt::BigInt(std::string s):negative(false) {
-    trim(s);
+BigInt::BigInt(const std::string &s):negative_(false) {
+    auto pr = trim(s);
     if (s[0] == '-') {
-        negative = true;
-        s.erase(s.begin());
+        negative_ = true;
+        ++pr.first;
     }
-    str2big(this->bit, s);
+    str2big(bit_, s, pr);
 }
 
-void BigInt::trim(std::string &s) {
-    auto ltrim = [](std::string &s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char c) -> bool {
+std::pair<int, int> BigInt::trim(const std::string &s) {
+    auto ltrim = [](const std::string &s)-> int {
+        return std::find_if(s.begin(), s.end(), [](char c) -> bool {
             //找到第一个非空字符
             return !std::isspace(c);
-        }));
+        }) - s.begin();
     };
-    auto rtrim = [](std::string &s) {
-        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char c) -> bool {
+    auto rtrim = [](const std::string &s) -> int {
+        return std::find_if(s.rbegin(), s.rend(), [](char c) -> bool {
             //找到最后一个非空字符
             return !std::isspace(c);
-        }).base(), s.end());
+        }).base() - s.begin();
     };
-    ltrim(s);
-    rtrim(s);
+    return {ltrim(s), rtrim(s)};
 }
 
 BigInt &BigInt::operator=(ll num) {
-    bit.clear();
-    negative = false;
+    bit_.clear();
+    negative_ = false;
     if (num < 0) {
         num = -num;
-        negative = true;
+        negative_ = true;
     }
-    num2big(this->bit, num);
+    num2big(bit_, num);
     return *this;
 }
 
-BigInt &BigInt::operator=(std::string s) {
-    bit.clear();
-    negative = false;
+BigInt &BigInt::operator=(const std::string &s) {
+    bit_.clear();
+    negative_ = false;
 
-    trim(s);
+    auto pr = trim(s);
     if (s[0] == '-') {
-        negative = true;
-        s.erase(s.begin());
+        negative_ = true;
+        ++pr.first;
     }
-    str2big(this->bit, s);
+    str2big(bit_, s, pr);
     return *this;
 }
 
 std::ostream &operator << (std::ostream &os, const BigInt &bigInt) {
-    if (bigInt.negative) {
+    if (bigInt.negative_) {
         //输出负号
         os << "-";
     }
-    auto &bit = bigInt.bit;
+    auto &bit = bigInt.bit_;
     //以大端字节序输出
     os << bit.back();
     //除了最后一位，其他的如果有前导0不能忽略
@@ -128,38 +129,38 @@ std::istream &operator >> (std::istream &is, BigInt &bigInt) {
 }
 
 BigInt & BigInt::operator+=(const BigInt &rhs) {
-    if (!negative && rhs.negative) {
+    if (!negative_ && rhs.negative_) {
         BigInt tmp = rhs;
         return *this = (tmp -= this->setOppo());
-    } else if (negative && !rhs.negative) {
+    } else if (negative_ && !rhs.negative_) {
         return *this -= -rhs;
     }
-    auto &rbit = rhs.bit;
-    int max_len = std::max(bit.size(), rbit.size());
-    int min_len = std::min(bit.size(), rbit.size());
+    auto &rbit = rhs.bit_;
+    int max_len = std::max(bit_.size(), rbit.size());
+    int min_len = std::min(bit_.size(), rbit.size());
     int g = 0;      //进位
     for (int i = 0; i < min_len; ++i) {
-        bit[i] += rbit[i] + g;
-        g = bit[i] / BASE;
-        bit[i] %= BASE;
+        bit_[i] += rbit[i] + g;
+        g = bit_[i] / BASE;
+        bit_[i] %= BASE;
     }
-    if (bit.size() < rbit.size()) {
+    if (bit_.size() < rbit.size()) {
         for (int i = min_len; i < max_len; ++i) {
-            bit.push_back(g + rbit[i]);
-            g = bit.back() / BASE;
-            bit.back() %= BASE;
+            bit_.push_back(g + rbit[i]);
+            g = bit_.back() / BASE;
+            bit_.back() %= BASE;
         }
     } else {
         for (int i = min_len; i < max_len; ++i) {
-            bit[i] += g;
-            g = bit[i] / BASE;
-            bit[i] %= BASE;
+            bit_[i] += g;
+            g = bit_[i] / BASE;
+            bit_[i] %= BASE;
             if (!g) break;
         }
     }
     if (g) {
         //加法的进位最多为1
-        bit.push_back(g);
+        bit_.push_back(g);
     }
     return *this;
 }
@@ -168,11 +169,11 @@ BigInt & BigInt::operator+=(const BigInt &rhs) {
 BigInt operator + (const BigInt &lhs, const BigInt &rhs) {
     BigInt ret = lhs;
     ret += rhs;
-    return std::move(ret);
+    return ret;
 }
 
 BigInt & BigInt::operator-=(const BigInt &rhs) {
-    if (!negative && !rhs.negative) {
+    if (!negative_ && !rhs.negative_) {
         if (*this >= rhs) {
 
         } else {
@@ -180,36 +181,36 @@ BigInt & BigInt::operator-=(const BigInt &rhs) {
             tmp -= *this;
             return *this = tmp.setOppo();
         }
-    } else if (!negative && rhs.negative) {
+    } else if (!negative_ && rhs.negative_) {
         this->setOppo();
         *this += rhs;
         this->setOppo();
         return *this;
-    } else if (negative && !rhs.negative) {
+    } else if (negative_ && !rhs.negative_) {
         return *this += -rhs;
     } else {
         BigInt tmp = -rhs;
         this->setOppo();
         return *this = (tmp -= *this);
     }
-    auto &rbit = rhs.bit;
+    auto &rbit = rhs.bit_;
     for (int i = 0; i < rbit.size(); ++i) {
-        if (bit[i] < rbit[i]) {
-            bit[i] += BASE;
-            bit[i + 1] -= 1;
+        if (bit_[i] < rbit[i]) {
+            bit_[i] += BASE;
+            bit_[i + 1] -= 1;
         }
-        bit[i] -= rbit[i];
+        bit_[i] -= rbit[i];
     }
-    for (int i = rbit.size(); i < bit.size(); ++i) {
-        if (bit[i] >= 0) {
+    for (int i = rbit.size(); i < bit_.size(); ++i) {
+        if (bit_[i] >= 0) {
             break;
         }
-        bit[i] += BASE;
-        bit[i + 1] -= 1;
+        bit_[i] += BASE;
+        bit_[i + 1] -= 1;
     }
     //删除前导0
-    for (int i = bit.size() - 1; i > 0; --i) {
-        if (!bit[i]) bit.pop_back();
+    for (int i = bit_.size() - 1; i > 0; --i) {
+        if (!bit_[i]) bit_.pop_back();
     }
     return *this;
 }
@@ -218,22 +219,22 @@ BigInt & BigInt::operator-=(const BigInt &rhs) {
 BigInt operator - (const BigInt &lhs, const BigInt &rhs) {
     BigInt res = lhs;
     res -= rhs;
-    return std::move(res);
+    return res;
 }
 
 BigInt & BigInt::operator*=(const BigInt &rhs) {
     //负负得正
-    if (negative && rhs.negative || !negative && !rhs.negative) {
-        negative = false;
+    if (negative_ && rhs.negative_ || !negative_ && !rhs.negative_) {
+        negative_ = false;
     } else {
-        negative = true;
+        negative_ = true;
     }
-    auto &rbit = rhs.bit;
+    auto &rbit = rhs.bit_;
     constexpr ll LBASE = BASE;
-    std::vector<ll> c(bit.size() + rbit.size(), 0);
-    for (int i = 0; i < bit.size(); ++i) {
+    std::vector<ll> c(bit_.size() + rbit.size(), 0);
+    for (int i = 0; i < bit_.size(); ++i) {
         for (int j = 0; j < rbit.size(); ++j) {
-            c[i + j] += static_cast<ll>(bit[i]) * static_cast<ll>(rbit[j]);
+            c[i + j] += static_cast<ll>(bit_[i]) * static_cast<ll>(rbit[j]);
             //在这里处理进位防止溢出
             if (c[i + j] >= LBASE) {
                 //有必要再进行除法，毕竟除法比较慢
@@ -255,9 +256,9 @@ BigInt & BigInt::operator*=(const BigInt &rhs) {
         if (!c[i]) c.pop_back();
         else break;
     }
-    bit.resize(c.size());
+    bit_.resize(c.size());
     for (int i = 0; i < c.size(); ++i) {
-        bit[i] = static_cast<int>(c[i]);
+        bit_[i] = static_cast<int>(c[i]);
     }
     return *this;
 }
@@ -265,7 +266,7 @@ BigInt & BigInt::operator*=(const BigInt &rhs) {
 BigInt operator * (const BigInt &lhs, const BigInt &rhs) {
     BigInt res = lhs;
     res *= rhs;
-    return std::move(res);
+    return res;
 }
 
 std::string BigInt::toString() const {
@@ -275,22 +276,22 @@ std::string BigInt::toString() const {
 }
 
 bool BigInt::less(const BigInt &lhs, const BigInt &rhs) {
-    if (lhs.bit.size() != rhs.bit.size()) return lhs.bit.size() < rhs.bit.size();
-    for (int i = lhs.bit.size() - 1; i >= 0; --i) {
-        if (lhs.bit[i] != rhs.bit[i]) return lhs.bit[i] < rhs.bit[i];
+    if (lhs.bit_.size() != rhs.bit_.size()) return lhs.bit_.size() < rhs.bit_.size();
+    for (int i = lhs.bit_.size() - 1; i >= 0; --i) {
+        if (lhs.bit_[i] != rhs.bit_[i]) return lhs.bit_[i] < rhs.bit_[i];
     }
     //相等
     return false;
 }
 
 bool operator < (const BigInt &lhs, const BigInt &rhs) {
-    if (!lhs.negative && !rhs.negative) {
+    if (!lhs.negative_ && !rhs.negative_) {
         return BigInt::less(lhs, rhs);
-    } else if (lhs.negative && !rhs.negative) {
+    } else if (lhs.negative_ && !rhs.negative_) {
         return true;
-    } else if (!lhs.negative && rhs.negative) {
+    } else if (!lhs.negative_ && rhs.negative_) {
         return false;
-    } else if (lhs.negative && rhs.negative) {
+    } else if (lhs.negative_ && rhs.negative_) {
         //都是负数
         if (BigInt::less(lhs, rhs)) {
             return false;
