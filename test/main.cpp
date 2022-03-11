@@ -22,6 +22,7 @@ void init(string &s) {
     if (negative) s.push_back('-');
 
     int len = getRandom() % MAX_LEN;
+    //int len = MAX_LEN;
     s.push_back(getRandom(9) + '1');  //第一位不能为0
     for (int i = 0; i < len; ++i) {
         s.push_back(getRandom(10) + '0');
@@ -118,13 +119,15 @@ void work() {
 int main() {
     ios::sync_with_stdio(false);
 
+    /*
     BigInt a, b;
     while (cin >> a >> b) {
         cout << "a + b = " << a + b << endl;
         cout << "a - b = " << a - b << endl;
         cout << "a * b = " << a * b << endl;
     }
-    //work();
+     */
+    work();
 
     return 0;
 }
